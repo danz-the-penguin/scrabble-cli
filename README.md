@@ -57,5 +57,12 @@ solve "AETRUI" -a "z"     # Board anchor tile must be included
 | `-a` | `--anchor` | Specify board tiles the word must connect through |
 | `-l` | `--len` / `--length` | Limit output length (`2`, `3-5`, or `5+`) |
 
-   
+## Credits & Acknowledgements
+
+Special thanks to the creators and maintainers of the word lists and dictionary datasets that power this tool:
+
+* **Scrabble Word List**: Official tournament word list hosted by [raun/Scrabble](https://github.com/raun/Scrabble).
+* **Definitions Database**: Powered by open-source English definitions (Webster's Unabridged Dictionary dataset) hosted by
+  [matthewreagan/WebstersEnglishDictionary](https://github.com/matthewreagan/WebstersEnglishDictionary)
+* **Fallback Word List**: Native Unix system dictionary (`/usr/share/dict/words`).
 
