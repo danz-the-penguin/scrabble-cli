@@ -58,6 +58,71 @@ solve "AETRUI" -a "z"     # Board anchor tile must be included
 | `-l` | `--len` / `--length` | Limit output length (`2`, `3-5`, or `5+`) |
 | `-m` | `--middle` | Board letter is strictly in the word
 
+## Completions
+
+### Bash
+
+1. Run this block to create a Bash completion script and append it to your `~/.bashrc`:
+```bash
+mkdir -p ~/.local/share/bash-completion/completions
+
+cat << 'EOF' > ~/.local/share/bash-completion/completions/solve
+_solve_completions() {
+    local cur options
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    options="-s --starts -e --ends -m --middle -a --anchor -l --len --length -h --help"
+
+    if [[ ${cur} == -* ]] ; then
+        COMPREPLY=( $(compgen -W "${options}" -- ${cur}) )
+        return 0
+    fi
+}
+complete -F _solve_completions solve
+EOF
+
+# Ensure it loads in ~/.bashrc
+grep -qxF 'source ~/.local/share/bash-completion/completions/solve' ~/.bashrc || \
+echo 'source ~/.local/share/bash-completion/completions/solve' >> ~/.bashrc
+```
+
+2. Reload your profile:
+```bash
+source ~/.bashrc
+```
+
+### Z-shell
+1. Run this block to create a Zsh completion definition and enable it in `~/.zshrc`:
+```bash
+mkdir -p ~/.zsh/completions
+
+cat << 'EOF' > ~/.zsh/completions/_solve
+#compdef solve
+
+_solve() {
+    _arguments -s \
+        '(-s --starts)'{-s,--starts}'[Word must start with these letters]:letters:' \
+        '(-e --ends)'{-e,--ends}'[Word must end with these letters]:letters:' \
+        '(-m --middle)'{-m,--middle}'[Board letter strictly inside the word]:letters:' \
+        '(-a --anchor)'{-a,--anchor}'[Board anchor letters anywhere in word]:letters:' \
+        '(-l --len --length)'{-l,--len,--length}'[Filter length (e.g., 5, 2-5, 4+)]:length:' \
+        '(-h --help)'{-h,--help}'[Show help message]' \
+        '1:rack letters:'
+}
+
+_solve "$@"
+EOF
+
+# Append fpath setup to ~/.zshrc if not already present
+grep -qxF 'fpath=(~/.zsh/completions $fpath)' ~/.zshrc || echo 'fpath=(~/.zsh/completions $fpath)' >> ~/.zshrc
+grep -qxF 'autoload -U compinit && compinit' ~/.zshrc || echo 'autoload -U compinit && compinit' >> ~/.zshrc
+```
+2. Reload your profile:
+```bash
+source ~/.zshrc
+```
+
+
 ## Roadmap & Future Updates
 
 - [x] ANSI color-coded table output
