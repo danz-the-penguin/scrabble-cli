@@ -7,27 +7,29 @@ parser = argparse.ArgumentParser(description="Scrabble CLI Solver Table")
 parser.add_argument("rack", help="Letters in rack (? or . for blanks)")
 parser.add_argument("-s", "--starts", default="", help="Word must start with these letters")
 parser.add_argument("-e", "--ends", default="", help="Word must end with these letters")
-parser.add_argument("-a", "--anchor", default="", help="Board anchor letters")
+parser.add_argument("-m", "--middle", default="", help="Board letter that must appear inside the word (not first/last)")
+parser.add_argument("-a", "--anchor", default="", help="Board anchor letters anywhere in word")
 parser.add_argument("-l", "--len", "--length", default="", help="Filter length: single integer (2), range (2-5), or minimum (4+)")
 
 args = parser.parse_args()
 
 # ANSI Colors
 C_RESET  = "\033[0m"
-C_SCORE  = "\033[1;33m"
-C_WORD   = "\033[1;36m"
-C_TOP    = "\033[1;32m"
-C_MATCH  = "\033[1;32m"
-C_BINGO  = "\033[1;35m"
-C_DEF    = "\033[3;90m"
-C_DIM    = "\033[90m"
-C_BORDER = "\033[38;5;238m"
+C_SCORE  = "\033[1;33m"  # Bold Yellow
+C_WORD   = "\033[1;36m"  # Cyan
+C_TOP    = "\033[1;32m"  # Green for top score
+C_MATCH  = "\033[1;32m"  # Green
+C_BINGO  = "\033[1;35m"  # Magenta
+C_DEF    = "\033[3;90m"  # Italic Gray
+C_DIM    = "\033[90m"    # Muted Gray
+C_BORDER = "\033[38;5;238m" # Dark Gray Line
 
 SCORES = {"a":1,"b":3,"c":3,"d":2,"e":1,"f":4,"g":2,"h":4,"i":1,"j":8,"k":5,"l":1,"m":3,"n":1,"o":1,"p":3,"q":10,"r":1,"s":1,"t":1,"u":1,"v":4,"w":4,"x":8,"y":4,"z":10}
 
-starts, ends, anchor = args.starts.lower(), args.ends.lower(), args.anchor.lower()
+starts, ends, middle, anchor = args.starts.lower(), args.ends.lower(), args.middle.lower(), args.anchor.lower()
 raw_rack = args.rack.lower()
 
+# Parse length filter range
 target_min, target_max = None, None
 if args.len:
     l_str = args.len.strip()
@@ -53,12 +55,14 @@ blanks_count = raw_rack.count("?") + raw_rack.count(".")
 clean_rack = raw_rack.replace("?", "").replace(".", "")
 rack_counts = collections.Counter(clean_rack)
 
-board_allowance = collections.Counter(starts) + collections.Counter(ends) + collections.Counter(anchor)
+# Board tiles allowance (does not consume rack tiles)
+board_allowance = collections.Counter(starts) + collections.Counter(ends) + collections.Counter(middle) + collections.Counter(anchor)
 
 config_dir = os.path.expanduser("~/.config")
 dict_json = os.path.join(config_dir, "scrabble_dict.json")
 scrabble_txt = os.path.join(config_dir, "scrabble_words.txt")
 
+# 1. Auto-download official Scrabble word list if missing
 if not os.path.exists(scrabble_txt):
     try:
         os.makedirs(config_dir, exist_ok=True)
@@ -70,6 +74,7 @@ if not os.path.exists(scrabble_txt):
     except Exception as e:
         sys.stderr.write(f"{C_DEF}Notice: Could not download Scrabble word list ({e}).{C_RESET}\n")
 
+# 2. Load Webster Definitions
 def_db = {}
 if os.path.exists(dict_json):
     try:
@@ -84,6 +89,7 @@ if os.path.exists(dict_json):
     except Exception:
         pass
 
+# 3. Load Legal Scrabble Words
 legal_words = set()
 if os.path.exists(scrabble_txt):
     with open(scrabble_txt, "r", encoding="utf-8", errors="ignore") as f:
@@ -102,6 +108,7 @@ if not legal_words and os.path.exists("/usr/share/dict/words"):
             if w.isalpha() and len(w) >= 2:
                 legal_words.add(w)
 
+# 4. Find Valid Matches
 valid = []
 for w in legal_words:
     if len(w) < 2:
@@ -116,6 +123,9 @@ for w in legal_words:
     if ends and not w.endswith(ends):
         continue
     if anchor and anchor not in w:
+        continue
+    # Middle condition: letter(s) must appear strictly inside the word body
+    if middle and not all(m in w[1:-1] for m in middle):
         continue
 
     word_counts = collections.Counter(w)
@@ -187,9 +197,20 @@ for score, length, word, bingo, defn in sorted_valid:
     suffix = word[len(word)-e_len:] if e_len > 0 else ""
     
     word_color = C_TOP if is_top else C_WORD
+    
+    # Highlight middle/anchor board matches in green inside mid-section
+    mid_colored = ""
+    board_mid_pool = collections.Counter(middle) + collections.Counter(anchor)
+    for char in mid:
+        if board_mid_pool[char] > 0:
+            mid_colored += f"{C_MATCH}{char}{word_color}"
+            board_mid_pool[char] -= 1
+        else:
+            mid_colored += char
+
     colored_word = ""
     if prefix: colored_word += f"{C_MATCH}{prefix}{C_RESET}"
-    if mid: colored_word += f"{word_color}{mid}{C_RESET}"
+    if mid: colored_word += f"{word_color}{mid_colored}{C_RESET}"
     if suffix: colored_word += f"{C_MATCH}{suffix}{C_RESET}"
     
     word_padding = " " * (16 - len(word))
