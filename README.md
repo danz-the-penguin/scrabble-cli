@@ -56,6 +56,7 @@ solve "AETRUI" -a "z"     # Board anchor tile must be included
 | `-e` | `--ends` | Filter words ending with specific letters |
 | `-a` | `--anchor` | Specify board tiles the word must connect through |
 | `-l` | `--len` / `--length` | Limit output length (`2`, `3-5`, or `5+`) |
+| '-m' | '--middle' | Board letter is strictly in the word
 
 ## Roadmap & Future Updates
 
