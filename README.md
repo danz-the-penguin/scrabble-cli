@@ -57,6 +57,14 @@ solve "AETRUI" -a "z"     # Board anchor tile must be included
 | `-a` | `--anchor` | Specify board tiles the word must connect through |
 | `-l` | `--len` / `--length` | Limit output length (`2`, `3-5`, or `5+`) |
 
+## Roadmap & Future Updates
+
+- [x] ANSI color-coded table output
+- [x] Length filtering (`-l` / `--len`)
+- [ ] Definitions
+- [ ] Custom dictionary file support (`--dict`)
+- [ ] Multi-language support
+
 ## Credits & Acknowledgements
 
 Special thanks to the creators and maintainers of the word lists and dictionary datasets that power this tool:
